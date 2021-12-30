@@ -10,7 +10,7 @@ gunicorn==20.1.0 \
     # via -r requirements/deploy.in
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==58.2.0 \
-    --hash=sha256:2551203ae6955b9876741a26ab3e767bb3242dafe86a32a749ea0d78b6792f11 \
-    --hash=sha256:2c55bdb85d5bb460bd2e3b12052b677879cffcf46c0c688f2e5bf51d36001145
+setuptools==60.2.0 \
+    --hash=sha256:5c89b1a14a67ac5f0956f1cb0aeb7d1d3f4c8ba4e4e1ab7bf1af4933f9a2f0fe \
+    --hash=sha256:675fcebecb43c32eb930481abf907619137547f4336206e4d673180242e1a278
     # via gunicorn
