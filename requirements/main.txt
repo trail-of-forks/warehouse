@@ -565,9 +565,9 @@ kombu==4.6.11 \
     --hash=sha256:be48cdffb54a2194d93ad6533d73f69408486483d189fe9f5990ee24255b0e0a \
     --hash=sha256:ca1b45faac8c0b18493d02a8571792f3c40291cf2bcf1f55afed3d8f3aa7ba74
     # via celery
-limits==1.5.1 \
-    --hash=sha256:0e5f8b10f18dd809eb2342f5046eb9aa5e4e69a0258567b5f4aa270647d438b3 \
-    --hash=sha256:f0c3319f032c4bfad68438ed1325c0fac86dac64582c7c25cddc87a0b658fa20
+limits==2.3.0 \
+    --hash=sha256:57499c0547a0624f438cbac795f6c0703362421fae37395ae332c954a016719a \
+    --hash=sha256:b80ac48ef624f2ff2b05be5358146142caf38ab7231eaaef29f45fef48fa5d34
     # via -r requirements/main.in
 lxml==4.6.4 \
     --hash=sha256:08eb9200d88b376a8ed5e50f1dc1d1a45b49305169674002a3b5929943390591 \
@@ -982,7 +982,6 @@ six==1.16.0 \
     #   google-cloud-storage
     #   grpcio
     #   html5lib
-    #   limits
     #   pymacaroons
     #   pynacl
     #   pyopenssl
@@ -1214,6 +1213,7 @@ setuptools==58.2.0 \
     #   -r requirements/main.in
     #   google-api-core
     #   google-auth
+    #   limits
     #   pastedeploy
     #   plaster
     #   pyramid
