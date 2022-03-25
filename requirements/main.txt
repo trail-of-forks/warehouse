@@ -1288,9 +1288,9 @@ zxcvbn==4.4.28 \
     # via -r requirements/main.in
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==60.8.2 \
-    --hash=sha256:43a5575eea6d3459789316e1596a3d2a0d215260cacf4189508112f35c9a145b \
-    --hash=sha256:66b8598da112b8dc8cd941d54cf63ef91d3b50657b374457eda5851f3ff6a899
+setuptools==61.0.0 \
+    --hash=sha256:6221e37dc86fcdc9dad9d9eb2002e9f9798fe4aca1bf18f280e66e50c0eb7fca \
+    --hash=sha256:ad88b13f3dc60420259c9877486908ddad12c7befaff0d624c7190f742abd64f
     # via
     #   -r requirements/main.in
     #   celery
