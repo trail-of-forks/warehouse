@@ -218,9 +218,9 @@ types-pytz==2022.1.2 \
     # via
     #   -r requirements/lint.in
     #   types-babel
-types-redis==4.3.11 \
-    --hash=sha256:83e5633f216c729fb39c5d3f71dd3b0080c651f75b5d4128733878512409c744 \
-    --hash=sha256:ba4612407a758353aa4fe5e1e4b804126e1160dbd6797840223958b1b5dda34d
+types-redis==4.3.17 \
+    --hash=sha256:03b023c08acf344f4f0821cc1c7e4dbecb7b17bc5483927c3e73d80f7fe1768e \
+    --hash=sha256:a34c4e7aafa4b2fb9090d3a7f3ad0ac969089c7b4a05c21dff593a0c37405916
     # via -r requirements/lint.in
 types-requests==2.28.5 \
     --hash=sha256:98ab647ae88b5e2c41d6d20cfcb5117da1bea561110000b6fdeeea07b3e89877 \
