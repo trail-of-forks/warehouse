@@ -129,7 +129,7 @@ tenacity==8.0.1 \
     # via ddtrace
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==64.0.1 \
-    --hash=sha256:378dcbfcc78b81432934fbd684ece21a82cd4b135315698732f7c8a4b97f81a9 \
-    --hash=sha256:7d9ae33bf128569f460a0745e87072a1996f33c9180316c20cc08b130ce816a6
+setuptools==65.4.0 \
+    --hash=sha256:a8f6e213b4b0661f590ccf40de95d28a177cd747d098624ad3f69c40287297e9 \
+    --hash=sha256:c2d2709550f15aab6c9110196ea312f468f41cd546bceb24127a1be6fdcaeeb1
     # via gunicorn
