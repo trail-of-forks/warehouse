@@ -146,9 +146,9 @@ factory-boy==3.2.1 \
     --hash=sha256:a98d277b0c047c75eb6e4ab8508a7f81fb03d2cb21986f627913546ef7a2a55e \
     --hash=sha256:eb02a7dd1b577ef606b75a253b9818e6f9eaf996d94449c9d5ebb124f90dc795
     # via -r requirements/tests.in
-faker==18.6.1 \
-    --hash=sha256:3aabe5b8c4ab50103a0c05c15e31a24b22045968d1ac0b7fb48d1c6244400495 \
-    --hash=sha256:6f882f5a3303c0690b3fb2dd3418839935a2dca155d38f1b2931b0079f3ce622
+faker==18.9.0 \
+    --hash=sha256:80a5ea1464556c06b98bf47ea3adc7f33811a1182518d847860b1874080bd3c9 \
+    --hash=sha256:defe9ed618a67ebf0f3eb1895e198c2355a7128a09087a6dce342ef2253263ea
     # via factory-boy
 freezegun==1.2.2 \
     --hash=sha256:cd22d1ba06941384410cd967d8a99d5ae2442f57dfafeff2fda5de8dc5c05446 \
