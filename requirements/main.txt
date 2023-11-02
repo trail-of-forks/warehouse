@@ -164,6 +164,7 @@ celery[sqs]==5.3.1 \
     --hash=sha256:f84d1c21a1520c116c2b7d26593926581191435a03aa74b77c941b93ca1c6210
     # via
     #   -r requirements/main.in
+    #   celery
     #   celery-redbeat
 celery-redbeat==2.1.1 \
     --hash=sha256:2bd5932fb8830bcc7fb63be506c64c80bcb3da8bf6e48ac8a34df4212966fcfa \
@@ -496,6 +497,7 @@ google-api-core[grpc]==2.11.0 \
     --hash=sha256:4b9bb5d5a380a0befa0573b302651b8a9a89262c1730e37bf423cec511804c22 \
     --hash=sha256:ce222e27b0de0d7bc63eb043b956996d6dccab14cc3b690aaea91c9cc99dc16e
     # via
+    #   google-api-core
     #   google-cloud-bigquery
     #   google-cloud-core
     #   google-cloud-storage
@@ -864,6 +866,7 @@ kombu[sqs]==5.3.1 \
     # via
     #   -r requirements/main.in
     #   celery
+    #   kombu
 limits==3.6.0 \
     --hash=sha256:32fe29a398352c71bc43d53773117d47e22c5ea4200aef28d3f5fdee10334cd7 \
     --hash=sha256:57a9c69fd37ad1e4fa3886dff8d035227e1f6af87f47e9118627e72cf1ced3bf
@@ -1236,20 +1239,18 @@ proto-plus==1.22.3 \
     --hash=sha256:a49cd903bc0b6ab41f76bf65510439d56ca76f868adf0274e738bfdd096894df \
     --hash=sha256:fdcd09713cbd42480740d2fe29c990f7fbd885a67efc328aa8be6ee3e9f76a6b
     # via google-cloud-bigquery
-protobuf==4.24.3 \
-    --hash=sha256:067f750169bc644da2e1ef18c785e85071b7c296f14ac53e0900e605da588719 \
-    --hash=sha256:12e9ad2ec079b833176d2921be2cb24281fa591f0b119b208b788adc48c2561d \
-    --hash=sha256:1b182c7181a2891e8f7f3a1b5242e4ec54d1f42582485a896e4de81aa17540c2 \
-    --hash=sha256:20651f11b6adc70c0f29efbe8f4a94a74caf61b6200472a9aea6e19898f9fcf4 \
-    --hash=sha256:2da777d34b4f4f7613cdf85c70eb9a90b1fbef9d36ae4a0ccfe014b0b07906f1 \
-    --hash=sha256:3d42e9e4796a811478c783ef63dc85b5a104b44aaaca85d4864d5b886e4b05e3 \
-    --hash=sha256:6e514e8af0045be2b56e56ae1bb14f43ce7ffa0f68b1c793670ccbe2c4fc7d2b \
-    --hash=sha256:b0271a701e6782880d65a308ba42bc43874dabd1a0a0f41f72d2dac3b57f8e76 \
-    --hash=sha256:ba53c2f04798a326774f0e53b9c759eaef4f6a568ea7072ec6629851c8435959 \
-    --hash=sha256:e29d79c913f17a60cf17c626f1041e5288e9885c8579832580209de8b75f2a52 \
-    --hash=sha256:f631bb982c5478e0c1c70eab383af74a84be66945ebf5dd6b06fc90079668d0b \
-    --hash=sha256:f6ccbcf027761a2978c1406070c3788f6de4a4b2cc20800cc03d52df716ad675 \
-    --hash=sha256:f6f8dc65625dadaad0c8545319c2e2f0424fede988368893ca3844261342c11a
+protobuf==4.25.0 \
+    --hash=sha256:1a3ba712877e6d37013cdc3476040ea1e313a6c2e1580836a94f76b3c176d575 \
+    --hash=sha256:1a53d6f64b00eecf53b65ff4a8c23dc95df1fa1e97bb06b8122e5a64f49fc90a \
+    --hash=sha256:32ac2100b0e23412413d948c03060184d34a7c50b3e5d7524ee96ac2b10acf51 \
+    --hash=sha256:5c1203ac9f50e4853b0a0bfffd32c67118ef552a33942982eeab543f5c634395 \
+    --hash=sha256:63714e79b761a37048c9701a37438aa29945cd2417a97076048232c1df07b701 \
+    --hash=sha256:683dc44c61f2620b32ce4927de2108f3ebe8ccf2fd716e1e684e5a50da154054 \
+    --hash=sha256:68f7caf0d4f012fd194a301420cf6aa258366144d814f358c5b32558228afa7c \
+    --hash=sha256:b2cf8b5d381f9378afe84618288b239e75665fe58d0f3fd5db400959274296e9 \
+    --hash=sha256:c40ff8f00aa737938c5378d461637d15c442a12275a81019cc2fef06d81c9419 \
+    --hash=sha256:cf21faba64cd2c9a3ed92b7a67f226296b10159dbb8fbc5e854fc90657d908e4 \
+    --hash=sha256:d94a33db8b7ddbd0af7c467475fb9fde0c705fb315a8433c0e2020942b863a1f
     # via
     #   google-api-core
     #   google-cloud-bigquery
@@ -1404,7 +1405,9 @@ pygments==2.16.1 \
 pyjwt[crypto]==2.8.0 \
     --hash=sha256:57e28d156e3d5c10088e0c68abb90bfac3df82b40a71bd0daa20c65ccd5c23de \
     --hash=sha256:59127c392cc44c2da5bb3192169a91f429924e17aff6534d70fdc02ab3e04320
-    # via -r requirements/main.in
+    # via
+    #   -r requirements/main.in
+    #   pyjwt
 pymacaroons==0.13.0 \
     --hash=sha256:1e6bba42a5f66c245adf38a5a4006a99dcc06a0703786ea636098667d42903b8 \
     --hash=sha256:3e14dff6a262fdbf1a15e769ce635a8aea72e6f8f91e408f9a97166c53b91907
@@ -1488,7 +1491,9 @@ pytz==2023.3.post1 \
 readme-renderer[md]==42.0 \
     --hash=sha256:13d039515c1f24de668e2c93f2e877b9dbe6c6c32328b90a40a49d8b2b85f36d \
     --hash=sha256:2d55489f83be4992fe4454939d1a051c33edbab778e82761d060c9fc6b308cd1
-    # via -r requirements/main.in
+    # via
+    #   -r requirements/main.in
+    #   readme-renderer
 redis==5.0.1 \
     --hash=sha256:0dab495cd5753069d3bc650a0dde8a8f9edde16fc5691b689a566eda58100d0f \
     --hash=sha256:ed4802971884ae19d640775ba3b03aa2e7bd5e8fb8dfaed2decce4d0fc48391f
@@ -1590,6 +1595,7 @@ sqlalchemy[asyncio]==2.0.21 \
     #   alembic
     #   alembic-postgresql-enum
     #   paginate-sqlalchemy
+    #   sqlalchemy
     #   zope-sqlalchemy
 stdlib-list==0.9.0 \
     --hash=sha256:98eb66135976c96b4ee3f4c0ef0552ebb5a9977ce3028433db79f4738b02af26 \
@@ -1780,7 +1786,9 @@ wrapt==1.15.0 \
 wtforms[email]==3.0.1 \
     --hash=sha256:6b351bbb12dd58af57ffef05bc78425d08d1914e0fd68ee14143b7ade023c5bc \
     --hash=sha256:837f2f0e0ca79481b92884962b914eba4e72b7a2daaf1f939c890ed0124b834b
-    # via -r requirements/main.in
+    # via
+    #   -r requirements/main.in
+    #   wtforms
 zope-deprecation==5.0 \
     --hash=sha256:28c2ee983812efb4676d33c7a8c6ade0df191c1c6d652bbbfe6e2eeee067b2d4 \
     --hash=sha256:b7c32d3392036b2145c40b3103e7322db68662ab09b7267afe1532a9d93f640f
