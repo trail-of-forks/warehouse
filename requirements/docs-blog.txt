@@ -209,9 +209,9 @@ jinja2==3.1.2 \
     #   mkdocs
     #   mkdocs-blogging-plugin
     #   mkdocs-material
-markdown==3.4.4 \
-    --hash=sha256:225c6123522495d4119a90b3a3ba31a1e87a70369e03f14799ea9c0d7183a3d6 \
-    --hash=sha256:a4c1b65c0957b4bd9e7d86ddc7b3c9868fb9670660f6f99f6d1bca8954d5a941
+markdown==3.5.1 \
+    --hash=sha256:5874b47d4ee3f0b14d764324d2c94c03ea66bee56f2d929da9f2508d65e722dc \
+    --hash=sha256:b65d7beb248dc22f2e8a31fb706d93798093c308dc1aba295aedeb9d41a813bd
     # via
     #   mkdocs
     #   mkdocs-material
@@ -379,9 +379,9 @@ pygments==2.16.1 \
     --hash=sha256:13fc09fa63bc8d8671a6d247e1eb303c4b343eaee81d861f3404db2935653692 \
     --hash=sha256:1daff0494820c69bc8941e407aa20f577374ee88364ee10a98fdbe0aece96e29
     # via mkdocs-material
-pymdown-extensions==10.3 \
-    --hash=sha256:77a82c621c58a83efc49a389159181d570e370fff9f810d3a4766a75fc678b66 \
-    --hash=sha256:94a0d8a03246712b64698af223848fd80aaf1ae4c4be29c8c61939b0467b5722
+pymdown-extensions==10.5 \
+    --hash=sha256:1b60f1e462adbec5a1ed79dac91f666c9c0d241fa294de1989f29d20096cfd0b \
+    --hash=sha256:1f0ca8bb5beff091315f793ee17683bc1390731f6ac4c5eb01e27464b80fe879
     # via mkdocs-material
 python-dateutil==2.8.2 \
     --hash=sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86 \
