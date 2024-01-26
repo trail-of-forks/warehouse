@@ -1217,9 +1217,7 @@ pycurl==7.45.2 \
 pydantic==2.5.3 \
     --hash=sha256:b3ef57c62535b0941697cce638c08900d87fcb67e29cfa99e8a68f747f393f7a \
     --hash=sha256:d0caf5954bee831b6bfe7e338c32b9e30c85dfe080c843680783ac2b631673b4
-    # via
-    #   -r requirements/main.in
-    #   webauthn
+    # via -r requirements/main.in
 pydantic-core==2.14.6 \
     --hash=sha256:00646784f6cd993b1e1c0e7b0fdcbccc375d539db95555477771c27555e3c556 \
     --hash=sha256:00b1087dabcee0b0ffd104f9f53d7d3eaddfaa314cdd6726143af6bc713aa27e \
@@ -1623,9 +1621,9 @@ wcwidth==0.2.13 \
     --hash=sha256:3da69048e4540d84af32131829ff948f1e022c1c6bdb8d6102117aac784f6859 \
     --hash=sha256:72ea0c06399eb286d978fdedb6923a9eb47e1c486ce63e9b4e64fc18303972b5
     # via prompt-toolkit
-webauthn==1.11.1 \
-    --hash=sha256:13592ee71489b571cb6e4a5d8b3c34f7b040cd3539a9d94b6b7d23fa88df5dfb \
-    --hash=sha256:24eda57903897369797f52a377f8c470e7057e79da5525779d0720a9fcc11926
+webauthn==2.0.0 \
+    --hash=sha256:12cc1759da98668b8242badc37c4129df300f89d89f5c183fac80e7b33c41dfd \
+    --hash=sha256:644dc68af5caaade06be6a2a2278775e85116e92dd755ad7a49d992d51c82033
     # via -r requirements/main.in
 webencodings==0.5.1 \
     --hash=sha256:a0af1213f3c2226497a97e2b3aa01a7e4bee4f403f95be16fc9acd2947514a78 \
