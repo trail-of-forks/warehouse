@@ -386,9 +386,9 @@ types-redis==4.6.0.20240218 \
     --hash=sha256:5103d7e690e5c74c974a161317b2d59ac2303cf8bef24175b04c2a4c3486cb39 \
     --hash=sha256:dc9c45a068240e33a04302aec5655cf41e80f91eecffccbb2df215b2f6fc375d
     # via -r requirements/lint.in
-types-requests==2.31.0.6 \
-    --hash=sha256:a2db9cb228a81da8348b49ad6db3f5519452dd20a9c1e1a868c83c5fe88fd1a9 \
-    --hash=sha256:cd74ce3b53c461f1228a9b783929ac73a666658f223e28ed29753771477b3bd0
+types-requests==2.31.0.20240218 \
+    --hash=sha256:a82807ec6ddce8f00fe0e949da6d6bc1fbf1715420218a9640d695f70a9e5a9b \
+    --hash=sha256:f1721dba8385958f504a5386240b92de4734e047a08a40751c1654d1ac3349c5
     # via -r requirements/lint.in
 types-s3transfer==0.10.0 \
     --hash=sha256:35e4998c25df7f8985ad69dedc8e4860e8af3b43b7615e940d53c00d413bdc69 \
@@ -404,10 +404,6 @@ types-stripe==3.5.2.20240106 \
     --hash=sha256:63a36958f0dc4a71685b027f0b6d807ff197ee337135ac19a0f8b6132365ca52 \
     --hash=sha256:9ea7bc9b9889a3d8606114c52dcc70a8fc62d44a46da4bc5ee19f0d463674bb8
     # via -r requirements/lint.in
-types-urllib3==1.26.25.14 \
-    --hash=sha256:229b7f577c951b8c1b92c1bc2b2fdb0b49847bd2af6d1cc2a2e3dd340f3bda8f \
-    --hash=sha256:9683bbb7fb72e32bfe9d2be6e04875fbe1b3eeec3cbb4ea231435aa7fd6b4f0e
-    # via types-requests
 types-webob==1.8.0.20240128 \
     --hash=sha256:036fe74c7eadb067cb2369ac6278c1b0c5d240097f1ced9b213592bbba3559d9 \
     --hash=sha256:85e1d28b9185a17c855a3ccf11164ea6703ef0ba359d94e9c3a2eb203320c74e
@@ -427,6 +423,10 @@ typing-extensions==4.9.0 \
     #   boto3-stubs
     #   celery-types
     #   mypy
+urllib3==2.2.1 \
+    --hash=sha256:450b20ec296a467077128bff42b73080516e71b56ff59a60a02bef2232c4fa9d \
+    --hash=sha256:d0570876c61ab9e520d776c38acbbb5b05a776d3f9ff98a5c8fd5162a444cf19
+    # via types-requests
 zope-event==5.0 \
     --hash=sha256:2832e95014f4db26c47a13fdaef84cef2f4df37e66b59d8f1f4a8f319a632c26 \
     --hash=sha256:bac440d8d9891b4068e2b5a2c5e2c9765a9df762944bda6955f96bb9b91e67cd
