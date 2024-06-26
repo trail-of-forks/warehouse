@@ -555,6 +555,84 @@ class TestRelease:
         # TODO: It'd be nice to test for the actual ordering here.
         assert dict(release.urls) == dict(expected)
 
+    @pytest.mark.parametrize(
+        ("url", "trusted_publisher_url", "expected"),
+        [
+            (  # GitHub Trivial case
+                "https://github.com/owner/project",
+                "https://github.com/owner/project",
+                True,
+            ),
+            (  # ActiveState trivial case
+                "https://platform.activestate.com/owner/project",
+                "https://platform.activestate.com/owner/project",
+                True,
+            ),
+            (  # GitLab trivial case
+                "https://gitlab.com/owner/project",
+                "https://gitlab.com/owner/project",
+                True,
+            ),
+            (  # URL is a sub-path of the TP URL
+                "https://github.com/owner/project/issues",
+                "https://github.com/owner/project",
+                True,
+            ),
+            (  # Normalization
+                "https://GiThUB.com/owner/project/",
+                "https://github.com/owner/project",
+                True,
+            ),
+            (  # TP URL is a prefix, but not a parent of the URL
+                "https://github.com/owner/project22",
+                "https://github.com/owner/project",
+                False,
+            ),
+            (  # URL is a parent of the TP URL
+                "https://github.com/owner",
+                "https://github.com/owner/project",
+                False,
+            ),
+            (  # Scheme component does not match
+                "http://github.com/owner/project",
+                "https://github.com/owner/project",
+                False,
+            ),
+            (  # Host component does not match
+                "https://gitlab.com/owner/project",
+                "https://github.com/owner/project",
+                False,
+            ),
+            (  # Host component matches, but contains user and port info
+                "https://user@github.com:443/owner/project",
+                "https://github.com/owner/project",
+                False,
+            ),
+            (  # URL path component is empty
+                "https://github.com",
+                "https://github.com/owner/project",
+                False,
+            ),
+            (  # TP URL path component is empty
+                # (currently no TPs have an empty path, so even if the given URL is a
+                # sub-path of the TP URL, we fail the verification)
+                "https://github.com/owner/project",
+                "https://github.com",
+                False,
+            ),
+            (  # Both path components are empty
+                # (currently no TPs have an empty path, so even if the given URL is the
+                # same as the TP URL, we fail the verification)
+                "https://github.com",
+                "https://github.com",
+                False,
+            ),
+        ],
+    )
+    def test_verify_url(self, db_session, url, trusted_publisher_url, expected):
+        release = DBReleaseFactory.create(trusted_publisher_url=trusted_publisher_url)
+        assert release.verify_url(url) == expected
+
     def test_acl(self, db_session):
         project = DBProjectFactory.create()
         owner1 = DBRoleFactory.create(project=project)
