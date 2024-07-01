@@ -680,6 +680,7 @@ def file_upload(request):
                 ),
             ) from None
 
+    is_new_release = False
     try:
         canonical_version = packaging.utils.canonicalize_version(meta.version)
         release = (
@@ -772,6 +773,7 @@ def file_upload(request):
             uploaded_via=request.user_agent,
         )
         request.db.add(release)
+        is_new_release = True
 
         # TODO: This should be handled by some sort of database trigger or
         #       a SQLAlchemy hook or the like instead of doing it inline in
@@ -1139,6 +1141,11 @@ def file_upload(request):
                         f"Attestation with unsupported predicate type: "
                         f"{predicate_type}",
                     )
+                elif is_new_release:
+                    # If this is a publish attestation and we are creating the release,
+                    # we store the signed URL of the repository, so that we can later
+                    # verify the URLs in the project.
+                    release.trusted_publisher_url = publisher.publisher_url()
 
                 # Log successful attestation upload
                 metrics.increment("warehouse.upload.attestations.ok")

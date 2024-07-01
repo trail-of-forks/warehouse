@@ -18,6 +18,7 @@ from collections import OrderedDict
 from uuid import UUID
 
 import packaging.utils
+import rfc3986.api
 
 from github_reserved_names import ALL as GITHUB_RESERVED_NAMES
 from pyramid.authorization import Allow, Authenticated
@@ -580,6 +581,9 @@ class Release(HasObservations, db.Model):
         "url",
         creator=lambda k, v: ReleaseURL(name=k, url=v),
     )
+    # This field is set by the first publish event that creates the release,
+    # subsequent file uploads do not affect it.
+    trusted_publisher_url: Mapped[str | None]
 
     files: Mapped[list[File]] = orm.relationship(
         cascade="all, delete-orphan",
@@ -653,8 +657,58 @@ class Release(HasObservations, db.Model):
                 continue
 
             _urls[name] = url
-
         return _urls
+
+    def verify_url(self, url: str) -> bool:
+        """Check a given URL against the stored Trusted Publisher URL for this release
+
+        A URL is considered "verified" iff it matches the stored Trusted Publisher URL
+        such that, when both URLs are normalized:
+        - The scheme component is the same (e.g: both use `https`)
+        - The authority component is the same (e.g.: `github.com`)
+        - The path component is the same, or a sub-path of the Trusted Publisher URL
+          (e.g.: `org/project` and `org/project/issues.html` will pass verification
+          against an `org/project` Trusted Publisher path component)
+        - The path component of the Trusted Publisher URL is not empty
+
+        Note: We compare the authority component instead of the host component because
+        the authority includes the host, and in practice neither URL should have user
+        nor port information.
+        """
+        if not self.trusted_publisher_url:
+            return False
+
+        publisher_uri = rfc3986.api.uri_reference(
+            self.trusted_publisher_url
+        ).normalize()
+        user_uri = rfc3986.api.uri_reference(url).normalize()
+        if publisher_uri.path is None:
+            # Currently no Trusted Publishers have an empty path component,
+            # so we defensively fail verification.
+            return False
+        elif user_uri.path and publisher_uri.path:
+            is_subpath = (
+                publisher_uri.path == user_uri.path
+                or user_uri.path.startswith(publisher_uri.path + "/")
+            )
+        else:
+            is_subpath = publisher_uri.path == user_uri.path
+
+        return (
+            publisher_uri.scheme == user_uri.scheme
+            and publisher_uri.authority == user_uri.authority
+            and is_subpath
+        )
+
+    @property
+    def verified_urls(self):
+        return {name: url for name, url in self.urls.items() if self.verify_url(url)}
+
+    @property
+    def unverified_urls(self):
+        return {
+            name: url for name, url in self.urls.items() if not self.verify_url(url)
+        }
 
     @staticmethod
     def get_user_name_and_repo_name(urls):
