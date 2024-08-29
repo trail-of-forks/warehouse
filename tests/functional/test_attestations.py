@@ -17,9 +17,10 @@ from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 
+import packaging.utils
 import pretend
 
-from pypi_attestations import Attestation, Envelope, VerificationMaterial
+from pypi_attestations import Attestation
 from sigstore.verify import Verifier
 from webtest.forms import Upload
 
@@ -27,6 +28,7 @@ from tests.common.db.oidc import GitHubPublisherFactory
 from tests.common.db.packaging import ProjectFactory
 from warehouse.macaroons import caveats
 from warehouse.macaroons.services import DatabaseMacaroonService
+from warehouse.packaging import Release
 
 
 def get_macaraoon(macaroon_service, publisher):
@@ -53,49 +55,46 @@ def get_macaraoon(macaroon_service, publisher):
 
 _HERE = Path(__file__).parent
 _ASSETS = _HERE / "assets"
-_WHEEL_PACKAGE = _ASSETS / "rfc8785-0.1.2-py3-none-any.whl"
+_WHEEL_PACKAGE = _ASSETS / "pypi_hello_world-0.1.0-py3-none-any.whl"
 
 
 class TestPackageWithAttestations:
 
-    def upload_package(self, webtest, monkeypatch, project, publisher):
+    def upload_package(
+        self, webtest, monkeypatch, project, wheel_filename: Path, publisher
+    ):
 
-        filename = "rfc8785-0.1.2-py3-none-any.whl"
-        attestation = Attestation(
-            version=1,
-            verification_material=VerificationMaterial(
-                certificate="some_cert", transparency_entries=[dict()]
-            ),
-            envelope=Envelope(
-                statement="somebase64string",
-                signature="somebase64string",
-            ),
+        name, version, _, __ = packaging.utils.parse_wheel_filename(wheel_filename.name)
+        attestation = Attestation.model_validate_json(
+            (
+                wheel_filename.parent / f"{wheel_filename.name}.publish.attestation"
+            ).read_text()
         )
 
-        md5_digest = hashlib.file_digest(open(_WHEEL_PACKAGE, "rb"), "md5").hexdigest()
+        md5_digest = hashlib.file_digest(wheel_filename.open("rb"), "md5").hexdigest()
 
         data = collections.OrderedDict(
             {
                 ":action": "file_upload",
-                "protocol_version": "1",  # TODO(dm)
                 "metadata_version": "1.2",
                 "name": project.name,
                 "attestations": f"[{attestation.model_dump_json()}]",
-                "version": "0.1.2",
+                "version": str(version),
                 "filetype": "bdist_wheel",
                 "pyversion": "cp312",
                 "md5_digest": md5_digest,
                 "content": (
                     Upload(
-                        filename, open(_WHEEL_PACKAGE, "rb").read(), "application/tar"
+                        wheel_filename.name,
+                        wheel_filename.read_bytes(),
+                        "application/tar",
                     )
                 ),
             }
         )
 
-        macaroon_service = DatabaseMacaroonService(
-            webtest.extra_environ["warehouse.db_session"]
-        )
+        db_session = webtest.extra_environ["warehouse.db_session"]
+        macaroon_service = DatabaseMacaroonService(db_session)
         webtest.set_authorization(
             ("Basic", ("__token__", get_macaraoon(macaroon_service, publisher)))
         )
@@ -109,14 +108,14 @@ class TestPackageWithAttestations:
         monkeypatch.setattr(Attestation, "verify", verify)
         monkeypatch.setattr(Verifier, "production", lambda: pretend.stub())
 
-        resp = webtest.post(
-            "/legacy/",
-            params=data,
-        )
-
-        # TODO(DM) Improve testing results here
+        resp = webtest.post("/legacy/", params=data)
 
         assert resp.status_code == HTTPStatus.OK
+
+        release_db = db_session.query(Release).filter(Release.project == project).one()
+        release_file = release_db.files[0]
+        assert release_file.filename == wheel_filename.name
+
 
     def view_package(self, webtest, project):
         resp = webtest.get(f"/simple/{project.normalized_name}/")
@@ -146,8 +145,11 @@ class TestPackageWithAttestations:
 
     def test_package(self, webtest, monkeypatch):
 
-        project = ProjectFactory.create(name="rfc8785")
+        project_name = "pypi_hello_world"
+        project = ProjectFactory.create(name=project_name)
+
+        # Shortcut here: we directly associate our publisher to the project
         publisher = GitHubPublisherFactory.create(projects=[project])
 
-        self.upload_package(webtest, monkeypatch, project, publisher)
+        self.upload_package(webtest, monkeypatch, project, _WHEEL_PACKAGE, publisher)
         self.view_package(webtest, project)
