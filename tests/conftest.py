@@ -702,7 +702,7 @@ class _TestApp(_webtest.TestApp):
 
 
 @pytest.fixture
-def webtest(app_config_dbsession_from_env):
+def webtest(app_config_dbsession_from_env, tmp_path):
     """
     This fixture yields a test app with an alternative Pyramid configuration,
     injecting the database session and transaction manager into the app.
@@ -714,7 +714,13 @@ def webtest(app_config_dbsession_from_env):
     """
 
     # We want to disable anything that relies on TLS here.
-    app_config_dbsession_from_env.add_settings(enforce_https=False)
+    # app_config_dbsession_from_env.add_settings(enforce_https=False)
+    app_config_dbsession_from_env.add_settings(
+        {
+            "enforce_https": False,
+            "archive_files.path": tmp_path,
+        }
+    )
 
     app = app_config_dbsession_from_env.make_wsgi_app()
 
