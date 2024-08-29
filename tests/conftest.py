@@ -57,7 +57,7 @@ from warehouse.oidc.utils import ACTIVESTATE_OIDC_ISSUER_URL, GITHUB_OIDC_ISSUER
 from warehouse.organizations import services as organization_services
 from warehouse.organizations.interfaces import IOrganizationService
 from warehouse.packaging import services as packaging_services
-from warehouse.packaging.interfaces import IProjectService
+from warehouse.packaging.interfaces import IFileStorage, IProjectService
 from warehouse.subscriptions import services as subscription_services
 from warehouse.subscriptions.interfaces import IBillingService, ISubscriptionService
 
@@ -110,6 +110,14 @@ def metrics():
             )
         ),
     )
+
+
+@pytest.fixture
+def storage_service(tmp_path):
+    """
+    A good-enough local file storage service.
+    """
+    return packaging_services.LocalArchiveFileStorage(tmp_path)
 
 
 @pytest.fixture
@@ -173,6 +181,7 @@ def pyramid_services(
     project_service,
     github_oidc_service,
     activestate_oidc_service,
+    storage_service,
     macaroon_service,
     helpdesk_service,
 ):
@@ -195,6 +204,7 @@ def pyramid_services(
         activestate_oidc_service, IOIDCPublisherService, None, name="activestate"
     )
     services.register_service(macaroon_service, IMacaroonService, None, name="")
+    services.register_service(storage_service, IFileStorage, None, name="archive")
     services.register_service(helpdesk_service, IHelpDeskService, None)
 
     return services
@@ -683,7 +693,7 @@ class _TestApp(_webtest.TestApp):
 
 
 @pytest.fixture
-def webtest(app_config_dbsession_from_env):
+def webtest(app_config_dbsession_from_env, tmp_path):
     """
     This fixture yields a test app with an alternative Pyramid configuration,
     injecting the database session and transaction manager into the app.
@@ -695,7 +705,13 @@ def webtest(app_config_dbsession_from_env):
     """
 
     # We want to disable anything that relies on TLS here.
-    app_config_dbsession_from_env.add_settings(enforce_https=False)
+    # app_config_dbsession_from_env.add_settings(enforce_https=False)
+    app_config_dbsession_from_env.add_settings(
+        {
+            "enforce_https": False,
+            "archive_files.path": tmp_path,
+        }
+    )
 
     app = app_config_dbsession_from_env.make_wsgi_app()
 
