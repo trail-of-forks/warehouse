@@ -578,3 +578,37 @@ def test_root_factory_access_control_list():
             ),
         ),
     ]
+
+
+def test_interfaces_registration(app_config):
+    import inspect
+    import sys
+
+    from zope.interface.interface import InterfaceClass
+
+    interfaces = set()
+    for module, obj in sys.modules.items():
+        if not module.startswith("warehouse") or not module.endswith(".interfaces"):
+            continue
+
+        for name, cls in inspect.getmembers(obj):
+            if (
+                name.startswith("I")
+                and name != "Interface"
+                and isinstance(cls, InterfaceClass)
+            ):
+                interfaces.add(cls)
+
+    # Remove generic interfaces used as bases (e.g. IGenericBillingService)
+    bases = {base for interface in interfaces for base in interface.getBases()}
+    interfaces -= bases
+
+    registered_interfaces = set()
+    for event in app_config.registry.introspector.get_category("pyramid_services"):
+        introspectable = event.get("introspectable")
+        interface = introspectable.discriminator[1][0]
+        registered_interfaces.add(interface)
+
+    difference = interfaces - registered_interfaces
+    # All interfaces must be registered but not all registrations are interfaces
+    assert not difference
