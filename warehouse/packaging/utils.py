@@ -45,9 +45,9 @@ def _simple_index(request, serial):
     }
 
 
-def _simple_detail(project, request):
+def _simple_detail(project, request, *, with_staged_release=False):
     # Get all of the files for this project.
-    files = sorted(
+    query = (
         request.db.query(File)
         .options(joinedload(File.release))
         .join(Release)
@@ -56,10 +56,15 @@ def _simple_detail(project, request):
         # And exclude un-published releases from the index
         .join(Project)
         .filter(
-            Project.lifecycle_status.is_distinct_from(LifecycleStatus.QuarantineEnter),
-            Release.published.is_(True),
+            Project.lifecycle_status.is_distinct_from(LifecycleStatus.QuarantineEnter)
         )
-        .all(),
+    )
+
+    if not with_staged_release:
+        query = query.filter(Release.published.is_(True))
+
+    files = sorted(
+        query.all(),
         key=lambda f: (packaging_legacy.version.parse(f.release.version), f.filename),
     )
     versions = sorted(
@@ -119,9 +124,12 @@ def _simple_detail(project, request):
     }
 
 
-def render_simple_detail(project, request, store=False):
-    context = _simple_detail(project, request)
+def render_simple_detail(project, request, store=False, with_staged_release=False):
+    context = _simple_detail(project, request, with_staged_release=with_staged_release)
     context = _valid_simple_detail_context(context)
+
+    if with_staged_release:
+        context["staged_releases"] = True
 
     env = request.registry.queryUtility(IJinja2Environment, name=".jinja2")
     template = env.get_template("templates/api/simple/detail.html")

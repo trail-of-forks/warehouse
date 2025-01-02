@@ -133,3 +133,48 @@ def simple_detail(project, request):
         context = _valid_simple_detail_context(context)
 
     return context
+
+
+@view_config(
+    route_name="api.simple.stage.detail",
+    context=Project,
+    renderer="api/simple/detail.html",
+    decorator=[
+        add_vary("Accept"),
+        cache_control(10 * 60),  # 10 minutes
+        origin_cache(
+            1 * 24 * 60 * 60,  # 1 day
+            stale_while_revalidate=5 * 60,  # 5 minutes
+            stale_if_error=1 * 24 * 60 * 60,  # 1 day
+        ),
+    ],
+)
+def stage_detail(project, request):
+    # Make sure that we're using the normalized version of the URL.
+    if project.normalized_name != request.matchdict.get(
+        "name", project.normalized_name
+    ):
+        return HTTPMovedPermanently(
+            request.current_route_path(name=project.normalized_name),
+            headers=_CORS_HEADERS,
+        )
+
+    # Determine what our content-type should be, and setup our request
+    # to return the correct content types.
+    request.response.content_type = _select_content_type(request)
+    if request.response.content_type == MIME_PYPI_SIMPLE_V1_JSON:
+        request.override_renderer = "json"
+
+    # Apply CORS headers.
+    request.response.headers.update(_CORS_HEADERS)
+
+    context = _simple_detail(project, request, with_staged_release=True)
+
+    # Modify the Jinja context to use valid variable name
+    if request.response.content_type != MIME_PYPI_SIMPLE_V1_JSON:
+        context = _valid_simple_detail_context(context)
+
+    # Update the template to distinguish from the classic simple API
+    context["staged_releases"] = True
+
+    return context

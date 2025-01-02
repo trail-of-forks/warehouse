@@ -60,3 +60,23 @@ def test_simple_api_has_provenance(webtest):
             f"http://localhost/integrity/{file.release.project.normalized_name}/"
             f"{file.release.version}/{file.filename}/provenance"
         )
+
+
+def test_simple_stage_detail(webtest):
+    project = ProjectFactory.create()
+    releases = ReleaseFactory.create_batch(2, project=project)
+    for release in releases:
+        FileFactory.create_batch(2, release=release, packagetype="bdist_wheel")
+
+    releases[-1].published = False
+    resp = webtest.get(
+        f"/simple/stage/{project.normalized_name}/", status=HTTPStatus.OK
+    )
+
+    assert resp.content_type == "text/html"
+    assert (
+        resp.html.h1.string
+        == f"Links for {project.normalized_name} (with staged releases)"
+    )
+    # There should be a link for every file
+    assert len(resp.html.find_all("a")) == 4

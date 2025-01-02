@@ -498,6 +498,34 @@ class TestSimpleDetail:
         ("content_type", "renderer_override"),
         CONTENT_TYPE_PARAMS,
     )
+    def test_with_staged_releases_omitted_from_index(
+        self, db_request, content_type, renderer_override
+    ):
+        db_request.accept = content_type
+        project = ProjectFactory.create()
+        release = ReleaseFactory.create(project=project, published=False)
+        FileFactory.create(
+            release=release, filename=f"{project.name}-{release.version}.tar.gz"
+        )
+
+        context = {
+            "meta": {"_last-serial": 0, "api-version": API_VERSION},
+            "name": project.normalized_name,
+            "files": [],
+            "versions": [],
+            "alternate-locations": [],
+        }
+        context = _update_context(context, content_type, renderer_override)
+
+        assert simple.simple_detail(project, db_request) == context
+
+        if renderer_override is not None:
+            assert db_request.override_renderer == renderer_override
+
+    @pytest.mark.parametrize(
+        ("content_type", "renderer_override"),
+        CONTENT_TYPE_PARAMS,
+    )
     def test_with_files_varying_provenance(
         self,
         db_request,
@@ -610,6 +638,105 @@ class TestSimpleDetail:
         context = _update_context(context, content_type, renderer_override)
 
         assert simple.simple_detail(project, db_request) == context
+
+        if renderer_override is not None:
+            assert db_request.override_renderer == renderer_override
+
+
+class TestStageDetail:
+    def test_redirects(self, pyramid_request):
+        project = pretend.stub(normalized_name="foo")
+
+        pyramid_request.matchdict["name"] = "Foo"
+        pyramid_request.current_route_path = pretend.call_recorder(
+            lambda name: "/foobar/"
+        )
+
+        resp = simple.stage_detail(project, pyramid_request)
+
+        assert isinstance(resp, HTTPMovedPermanently)
+        assert resp.headers["Location"] == "/foobar/"
+        _assert_has_cors_headers(resp.headers)
+        assert pyramid_request.current_route_path.calls == [pretend.call(name="foo")]
+
+    @pytest.mark.parametrize(
+        ("content_type", "renderer_override"),
+        CONTENT_TYPE_PARAMS,
+    )
+    def test_staged_releases(
+        self,
+        db_request,
+        content_type,
+        renderer_override,
+    ):
+        db_request.accept = content_type
+        project = ProjectFactory.create()
+        db_request.matchdict["name"] = project.normalized_name
+        releases = [
+            ReleaseFactory.create(project=project, version=version)
+            for version in [
+                "0.1.0",
+                "0.2.0",
+                "1.0",
+            ]
+        ]
+
+        tar_files = [
+            FileFactory.create(
+                release=r,
+                filename=f"{project.name}-{r.version}.tar.gz",
+                packagetype="sdist",
+            )
+            for r in releases
+        ]
+
+        releases[-1].published = False
+
+        urls_iter = (f"/file/{f.filename}" for f in tar_files)
+        db_request.matchdict["name"] = project.normalized_name
+        db_request.route_url = lambda *a, **kw: next(urls_iter)
+
+        user = UserFactory.create()
+        je = JournalEntryFactory.create(name=project.name, submitted_by=user)
+        context = {
+            "meta": {"_last-serial": je.id, "api-version": API_VERSION},
+            "name": project.normalized_name,
+            "versions": [
+                "0.1.0",
+                "0.2.0",
+                "1.0",
+            ],
+            "files": [
+                {
+                    "filename": f.filename,
+                    "url": f"/file/{f.filename}",
+                    "hashes": {"sha256": f.sha256_digest},
+                    "requires-python": f.requires_python,
+                    "yanked": False,
+                    "size": f.size,
+                    "upload-time": f.upload_time.isoformat() + "Z",
+                    "data-dist-info-metadata": (
+                        {"sha256": "deadbeefdeadbeefdeadbeefdeadbeef"}
+                        if f.metadata_file_sha256_digest is not None
+                        else False
+                    ),
+                    "core-metadata": (
+                        {"sha256": "deadbeefdeadbeefdeadbeefdeadbeef"}
+                        if f.metadata_file_sha256_digest is not None
+                        else False
+                    ),
+                    "provenance": None,
+                }
+                for f in tar_files
+            ],
+            "alternate-locations": [],
+            "staged_releases": True,
+        }
+
+        context = _update_context(context, content_type, renderer_override)
+
+        result = simple.stage_detail(project, db_request)
+        assert result == context
 
         if renderer_override is not None:
             assert db_request.override_renderer == renderer_override

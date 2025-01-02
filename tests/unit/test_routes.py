@@ -550,6 +550,13 @@ def test_routes(warehouse):
         pretend.call("api.billing.webhook", "/billing/webhook/", domain=warehouse),
         pretend.call("api.simple.index", "/simple/", domain=warehouse),
         pretend.call(
+            "api.simple.stage.detail",
+            "/simple/stage/{project_name}/",
+            traverse="/{project_name}/",
+            factory="warehouse.packaging.models:ProjectFactory",
+            domain=warehouse,
+        ),
+        pretend.call(
             "api.simple.detail",
             "/simple/{name}/",
             factory="warehouse.packaging.models:ProjectFactory",

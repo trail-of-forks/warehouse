@@ -561,6 +561,13 @@ def includeme(config):
     config.add_route("api.billing.webhook", "/billing/webhook/", domain=warehouse)
     config.add_route("api.simple.index", "/simple/", domain=warehouse)
     config.add_route(
+        "api.simple.stage.detail",
+        "/simple/stage/{project_name}/",
+        traverse="/{project_name}/",
+        factory="warehouse.packaging.models:ProjectFactory",
+        domain=warehouse,
+    )
+    config.add_route(
         "api.simple.detail",
         "/simple/{name}/",
         factory="warehouse.packaging.models:ProjectFactory",

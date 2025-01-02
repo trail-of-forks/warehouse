@@ -14,6 +14,7 @@ import hashlib
 import tempfile
 
 import pretend
+import pytest
 
 from warehouse.packaging.interfaces import ISimpleStorage
 from warehouse.packaging.utils import (
@@ -36,14 +37,23 @@ def test_simple_detail_empty_string(db_request):
     assert expected_content["files"][0]["requires-python"] is None
 
 
-def test_render_simple_detail(db_request, monkeypatch, jinja):
+@pytest.mark.parametrize(
+    "with_staged",
+    [
+        False,
+        True,
+    ],
+)
+def test_render_simple_detail(with_staged, db_request, monkeypatch, jinja):
     project = ProjectFactory.create()
     release1 = ReleaseFactory.create(project=project, version="1.0")
     release2 = ReleaseFactory.create(project=project, version="dog")
+    release3 = ReleaseFactory.create(project=project, version="2.0", published=False)
     FileFactory.create(release=release1)
     FileFactory.create(
         release=release2, metadata_file_sha256_digest="beefdeadbeefdeadbeefdeadbeefdead"
     )
+    file3 = FileFactory.create(release=release3)
 
     fake_hasher = pretend.stub(
         update=pretend.call_recorder(lambda x: None),
@@ -54,11 +64,15 @@ def test_render_simple_detail(db_request, monkeypatch, jinja):
 
     db_request.route_url = lambda *a, **kw: "the-url"
     template = jinja.get_template("templates/api/simple/detail.html")
-    context = _simple_detail(project, db_request)
+    context = _simple_detail(project, db_request, with_staged_release=with_staged)
     context = _valid_simple_detail_context(context)
+    if with_staged:
+        context["staged_releases"] = True
     expected_content = template.render(**context, request=db_request).encode("utf-8")
 
-    content_hash, path = render_simple_detail(project, db_request)
+    content_hash, path = render_simple_detail(
+        project, db_request, with_staged_release=with_staged
+    )
 
     assert fakeblake2b.calls == [pretend.call(digest_size=32)]
     assert fake_hasher.update.calls == [pretend.call(expected_content)]
@@ -69,6 +83,9 @@ def test_render_simple_detail(db_request, monkeypatch, jinja):
         f"{project.normalized_name}/deadbeefdeadbeefdeadbeefdeadbeef"
         + f".{project.normalized_name}.html"
     )
+
+    # Verify that staged releases are only displayed when we ask for them
+    assert (file3.filename.encode() in expected_content) == with_staged
 
 
 def test_render_simple_detail_with_store(db_request, monkeypatch, jinja):
