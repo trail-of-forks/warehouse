@@ -28,6 +28,10 @@ endif
 # https://nedbatchelder.com/blog/202312/coveragepy_with_sysmonitoring.html
 COVERAGE_CORE ?= sysmon
 
+# https://docs.docker.com/build/bake/
+# TODO(dm) Documentation
+DOCKER_BAKE=true
+
 default:
 	@echo "Call a specific subcommand:"
 	@echo
