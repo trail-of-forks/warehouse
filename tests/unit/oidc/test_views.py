@@ -849,7 +849,12 @@ def test_mint_token_with_invalid_name_fails(monkeypatch, db_request):
 
 
 @pytest.mark.parametrize(
-    ("claims_in_token", "is_reusable", "is_github"),
+    (
+        "claims_in_token",
+        "publisher_workflow_filename",
+        "is_legacy_reusable",
+        "is_github",
+    ),
     [
         (
             {
@@ -858,7 +863,19 @@ def test_mint_token_with_invalid_name_fails(monkeypatch, db_request):
                 "workflow_ref": "org/repo/.github/workflows/parent.yml@someref",
                 "job_workflow_ref": "org2/repo2/.github/workflows/reusable.yml@v1",
             },
+            "reusable.yml",
             True,
+            True,
+        ),
+        (
+            {
+                "ref": "someref",
+                "sha": "somesha",
+                "workflow_ref": "org/repo/.github/workflows/parent.yml@someref",
+                "job_workflow_ref": "org/repo/.github/workflows/workflow.yml@someref",
+            },
+            "parent.yml",
+            False,
             True,
         ),
         (
@@ -868,6 +885,7 @@ def test_mint_token_with_invalid_name_fails(monkeypatch, db_request):
                 "workflow_ref": "org/repo/.github/workflows/workflow.yml@someref",
                 "job_workflow_ref": "org/repo/.github/workflows/workflow.yml@someref",
             },
+            "workflow.yml",
             False,
             True,
         ),
@@ -876,16 +894,18 @@ def test_mint_token_with_invalid_name_fails(monkeypatch, db_request):
                 "ref": "someref",
                 "sha": "somesha",
             },
+            "workflow.yml",
             False,
             False,
         ),
     ],
 )
-def test_mint_token_github_reusable_workflow_metrics(
+def test_mint_token_github_legacy_reusable_workflow_metrics(
     monkeypatch,
     db_request,
     claims_in_token,
-    is_reusable,
+    publisher_workflow_filename,
+    is_legacy_reusable,
     is_github,
     metrics,
 ):
@@ -897,7 +917,11 @@ def test_mint_token_github_reusable_workflow_metrics(
         record_event=pretend.call_recorder(lambda **kw: None),
     )
 
-    publisher = GitHubPublisherFactory() if is_github else GitLabPublisherFactory()
+    publisher = (
+        GitHubPublisherFactory(workflow_filename=publisher_workflow_filename)
+        if is_github
+        else GitLabPublisherFactory()
+    )
     monkeypatch.setattr(publisher.__class__, "projects", [project])
     # NOTE: Can't set __str__ using pretend.stub()
     monkeypatch.setattr(publisher.__class__, "__str__", lambda s: "fakespecifier")
@@ -935,9 +959,9 @@ def test_mint_token_github_reusable_workflow_metrics(
 
     views.mint_token(oidc_service, DUMMY_GITHUB_OIDC_JWT, db_request)
 
-    if is_reusable:
+    if is_legacy_reusable:
         assert metrics.increment.calls == [
-            pretend.call("warehouse.oidc.mint_token.github_reusable_workflow"),
+            pretend.call("warehouse.oidc.mint_token.github_legacy_reusable_workflow"),
         ]
     else:
         assert not metrics.increment.calls

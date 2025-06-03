@@ -1,5 +1,6 @@
 FROM opensearchproject/opensearch:2.13.0
 
+ENV _JAVA_OPTIONS=-XX:UseSVE=0
 RUN opensearch-plugin remove opensearch-skills --purge
 RUN opensearch-plugin remove opensearch-ml --purge
 RUN opensearch-plugin remove opensearch-neural-search --purge

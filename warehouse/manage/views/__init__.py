@@ -1473,12 +1473,14 @@ class ManageOIDCPublisherViews:
 
         # First we add the new (constrained) trusted publisher
         if isinstance(publisher, GitHubPublisher):
+            current_reusable_support = publisher.supports_legacy_reusable_workflows
             constrained_publisher = GitHubPublisher(
                 repository_name=publisher.repository_name,
                 repository_owner=publisher.repository_owner,
                 repository_owner_id=publisher.repository_owner_id,
                 workflow_filename=publisher.workflow_filename,
                 environment=form.constrained_environment_name.data,
+                supports_legacy_reusable_workflows=current_reusable_support,
             )
         elif isinstance(publisher, GitLabPublisher):
             constrained_publisher = GitLabPublisher(
@@ -1625,6 +1627,7 @@ class ManageOIDCPublisherViews:
                 repository_owner_id=form.owner_id,
                 workflow_filename=form.workflow_filename.data,
                 environment=form.normalized_environment,
+                supports_legacy_reusable_workflows=False,
             )
 
             self.request.db.add(publisher)

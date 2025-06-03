@@ -6,10 +6,12 @@ from typing import Any, Self
 
 from more_itertools import first_true
 from pypi_attestations import GitHubPublisher as GitHubIdentity, Publisher
+from pyramid.threadlocal import get_current_request
 from sqlalchemy import ForeignKey, String, UniqueConstraint, and_, exists
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Query, mapped_column
+from sqlalchemy.orm import Mapped, Query, mapped_column
 
+from warehouse.email import send_legacy_reusable_workflow_support_email
 from warehouse.oidc.errors import InvalidPublisherError
 from warehouse.oidc.interfaces import SignedClaims
 from warehouse.oidc.models._core import (
@@ -20,6 +22,7 @@ from warehouse.oidc.models._core import (
     check_existing_jti,
 )
 from warehouse.oidc.urls import verify_url_from_reference
+from warehouse.utils.db.types import bool_true
 
 GITHUB_OIDC_ISSUER_URL = "https://token.actions.githubusercontent.com"
 
@@ -57,22 +60,22 @@ def _check_repository(ground_truth, signed_claim, _all_signed_claims, **_kwargs)
     return signed_claim.lower() == ground_truth.lower()
 
 
-def _check_job_workflow_ref(ground_truth, signed_claim, all_signed_claims, **_kwargs):
+def _check_workflow_ref(ground_truth, signed_claim, all_signed_claims, **_kwargs):
     # We expect a string formatted as follows:
     #   OWNER/REPO/.github/workflows/WORKFLOW.yml@REF
     # where REF is the value of either the `ref` or `sha` claims.
 
-    # Defensive: GitHub should never give us an empty job_workflow_ref,
+    # Defensive: GitHub should never give us an empty workflow_ref,
     # but we check for one anyways just in case.
     if not signed_claim:
-        raise InvalidPublisherError("The job_workflow_ref claim is empty")
+        raise InvalidPublisherError("The workflow_ref claim is empty")
 
     # We need at least one of these to be non-empty
     # In most cases, the `ref` claim will be present (e.g: "refs/heads/main")
-    # and used in `job_workflow_ref`. However, there are certain cases
+    # and used in `workflow_ref`. However, there are certain cases
     # (such as creating a GitHub deployment tied to a specific commit SHA), where
     # a workflow triggered by that deployment will have an empty `ref` claim, and
-    # the `job_workflow_ref` claim will use the `sha` claim instead.
+    # the `workflow_ref` claim will use the `sha` claim instead.
     ref = all_signed_claims.get("ref")
     sha = all_signed_claims.get("sha")
     if not (ref or sha):
@@ -81,7 +84,7 @@ def _check_job_workflow_ref(ground_truth, signed_claim, all_signed_claims, **_kw
     expected = {f"{ground_truth}@{_ref}" for _ref in [ref, sha] if _ref}
     if signed_claim not in expected:
         raise InvalidPublisherError(
-            "The job_workflow_ref claim does not match, expecting one of "
+            "The workflow_ref claim does not match, expecting one of "
             f"{sorted(expected)!r}, got {signed_claim!r}"
         )
 
@@ -150,11 +153,11 @@ class GitHubPublisherMixin:
         "repository": _check_repository,
         "repository_owner": check_claim_binary(str.__eq__),
         "repository_owner_id": check_claim_binary(str.__eq__),
-        "job_workflow_ref": _check_job_workflow_ref,
         "jti": check_existing_jti,
+        "workflow_ref": _check_workflow_ref,
     }
 
-    __required_unverifiable_claims__: set[str] = {"ref", "sha"}
+    __required_unverifiable_claims__: set[str] = {"job_workflow_ref", "ref", "sha"}
 
     __optional_verifiable_claims__: dict[str, CheckClaimCallable[Any]] = {
         "environment": _check_environment,
@@ -175,7 +178,6 @@ class GitHubPublisherMixin:
         "repository_visibility",
         "workflow_sha",
         "job_workflow_sha",
-        "workflow_ref",
         "runner_environment",
         "environment_node_id",
         "enterprise",
@@ -204,29 +206,30 @@ class GitHubPublisherMixin:
         return None
 
     @classmethod
-    def lookup_by_claims(cls, session, signed_claims: SignedClaims) -> Self:
+    def _lookup_by_claims_shared(
+        cls, session, signed_claims: SignedClaims
+    ) -> Self | None:
         repository = signed_claims["repository"]
         repository_owner, repository_name = repository.split("/", 1)
-        job_workflow_ref = signed_claims["job_workflow_ref"]
+        workflow_ref = signed_claims["workflow_ref"]
         environment = signed_claims.get("environment")
 
-        if not (job_workflow_filename := _extract_workflow_filename(job_workflow_ref)):
+        if not (workflow_filename := _extract_workflow_filename(workflow_ref)):
             raise InvalidPublisherError(
-                "Could not job extract workflow filename from OIDC claims"
+                "Could not extract workflow filename from OIDC claims"
             )
 
         query: Query = Query(cls).filter_by(
             repository_name=repository_name,
             repository_owner=repository_owner,
             repository_owner_id=signed_claims["repository_owner_id"],
-            workflow_filename=job_workflow_filename,
+            workflow_filename=workflow_filename,
         )
         publishers = query.with_session(session).all()
 
-        if publisher := cls._get_publisher_for_environment(publishers, environment):
-            return publisher
-        else:
-            raise InvalidPublisherError("Publisher with matching claims was not found")
+        # if we found a publisher that matches the top-level workflow, no special
+        # handling is needed.
+        return cls._get_publisher_for_environment(publishers, environment)
 
     @property
     def _workflow_slug(self):
@@ -241,7 +244,7 @@ class GitHubPublisherMixin:
         return f"{self.repository_owner}/{self.repository_name}"
 
     @property
-    def job_workflow_ref(self):
+    def workflow_ref(self):
         return f"{self.repository}/{self._workflow_slug}"
 
     @property
@@ -309,6 +312,7 @@ class GitHubPublisher(GitHubPublisherMixin, OIDCPublisher):
     id = mapped_column(
         UUID(as_uuid=True), ForeignKey(OIDCPublisher.id), primary_key=True
     )
+    supports_legacy_reusable_workflows: Mapped[bool_true]
 
     def verify_url(self, url: str):
         """
@@ -348,6 +352,73 @@ class GitHubPublisher(GitHubPublisherMixin, OIDCPublisher):
             return True
 
         return verify_url_from_reference(reference_url=docs_url, url=url)
+
+    @classmethod
+    def lookup_by_claims(cls, session, signed_claims: SignedClaims) -> Self:
+        # if we found a publisher that matches the top-level workflow, no special
+        # handling is needed.
+        if publisher := cls._lookup_by_claims_shared(session, signed_claims):
+            return publisher
+
+        # What follows
+        # is special legacy handling for non-pending publishers configured with reusable
+        # workflows. This will be removed once most publishers migrate to the new way of
+        # specifying reusable workflows.
+
+        repository = signed_claims["repository"]
+        repository_owner, repository_name = repository.split("/", 1)
+        job_workflow_ref = signed_claims["job_workflow_ref"]
+        workflow_ref = signed_claims["workflow_ref"]
+        environment = signed_claims.get("environment")
+
+        # return value already checked by `_lookup_by_claims_shared`
+        workflow_filename = _extract_workflow_filename(workflow_ref)
+        if not (job_workflow_filename := _extract_workflow_filename(job_workflow_ref)):
+            raise InvalidPublisherError(
+                "Could not extract job workflow filename from OIDC claims"
+            )
+
+        # If no publisher matches the top-level workflow, and the top and bottom
+        # level workflows are the same, there's no valid publisher for this token
+        if workflow_filename == job_workflow_filename:
+            raise InvalidPublisherError("Publisher with matching claims was not found")
+
+        # If the top and bottom workflows differ, then we are in the special
+        # case for reusable workflows that is allowed only temporarily, until
+        # we migrate all publishers to the correct fields.
+        # Only Trusted Publishers created before this migration can use this path,
+        # for backwards compatibility reasons.
+        else:
+            query: Query = Query(cls).filter_by(
+                repository_name=repository_name,
+                repository_owner=repository_owner,
+                repository_owner_id=signed_claims["repository_owner_id"],
+                workflow_filename=job_workflow_filename,
+                supports_legacy_reusable_workflows=True,
+            )
+            publishers = query.with_session(session).all()
+            if publisher := cls._get_publisher_for_environment(publishers, environment):
+                # We send an email to users that depend on this legacy support,
+                # suggesting to change their Trusted Publishers to refer to the
+                # top-level workflow instead of the reusable one.
+                # This is temporary, until we remove support for this legacy
+                # path.
+                if len(publisher.projects) > 0:
+                    request = get_current_request()
+                    send_legacy_reusable_workflow_support_email(
+                        request,
+                        set(publisher.projects[0].owners),
+                        project_name=publisher.projects[0].name,
+                        publisher=publisher,
+                        job_workflow_ref=job_workflow_ref,
+                        workflow_ref=workflow_ref,
+                        workflow_ref_filename=workflow_filename,
+                    )
+                return publisher
+            else:
+                raise InvalidPublisherError(
+                    "Publisher with matching claims was not found"
+                )
 
 
 class PendingGitHubPublisher(GitHubPublisherMixin, PendingOIDCPublisher):
@@ -390,7 +461,15 @@ class PendingGitHubPublisher(GitHubPublisherMixin, PendingOIDCPublisher):
             repository_owner_id=self.repository_owner_id,
             workflow_filename=self.workflow_filename,
             environment=self.environment,
+            supports_legacy_reusable_workflows=False,
         )
 
         session.delete(self)
         return publisher
+
+    @classmethod
+    def lookup_by_claims(cls, session, signed_claims: SignedClaims) -> Self:
+        if publisher := cls._lookup_by_claims_shared(session, signed_claims):
+            return publisher
+
+        raise InvalidPublisherError("Publisher with matching claims was not found")

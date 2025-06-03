@@ -38,6 +38,7 @@ REMOTE_ADDR_SALTED = "a69a49383d81404e4b1df297c7baa28e1cd6c4ee1495ed5d0ab165a63a
     "ref_type": "fake",
     "environment": "fake",
     "job_workflow_ref": "foo/bar/.github/workflows/example.yml@fake",
+    "workflow_ref": "foo/bar/.github/workflows/example.yml@fake",
     "iss": "https://token.actions.githubusercontent.com",
     "nbf": 1650663265,
     "exp": 1650664165,
@@ -54,10 +55,11 @@ DUMMY_GITHUB_OIDC_JWT = (
     "vbyIsIndvcmtmbG93IjoiZmFrZSIsImhlYWRfcmVmIjoiZmFrZSIsImJhc2VfcmVmIjoiZ"
     "mFrZSIsImV2ZW50X25hbWUiOiJmYWtlIiwicmVmX3R5cGUiOiJmYWtlIiwiZW52aXJvbm1"
     "lbnQiOiJmYWtlIiwiam9iX3dvcmtmbG93X3JlZiI6ImZvby9iYXIvLmdpdGh1Yi93b3JrZ"
-    "mxvd3MvZXhhbXBsZS55bWxAZmFrZSIsImlzcyI6Imh0dHBzOi8vdG9rZW4uYWN0aW9ucy5"
-    "naXRodWJ1c2VyY29udGVudC5jb20iLCJuYmYiOjE2NTA2NjMyNjUsImV4cCI6MTY1MDY2N"
-    "DE2NSwiaWF0IjoxNjUwNjYzODY1fQ.f-FMv5FF5sdxAWeUilYDt9NoE7Et0vbdNhK32c2o"
-    "C-E"
+    "mxvd3MvZXhhbXBsZS55bWxAZmFrZSIsIndvcmtmbG93X3JlZiI6ImZvby9iYXIvLmdpdGh"
+    "1Yi93b3JrZmxvd3MvZXhhbXBsZS55bWxAZmFrZSIsImlzcyI6Imh0dHBzOi8vdG9rZW4uY"
+    "WN0aW9ucy5naXRodWJ1c2VyY29udGVudC5jb20iLCJuYmYiOjE2NTA2NjMyNjUsImV4cCI"
+    "6MTY1MDY2NDE2NSwiaWF0IjoxNjUwNjYzODY1fQ.Ox4p5PNRe5fRgqm6D7Xx6rQqtxcq5n"
+    "1suxa8wdpGGbo"
 )
 
 """
