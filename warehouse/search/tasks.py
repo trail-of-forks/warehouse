@@ -28,7 +28,7 @@ from warehouse.packaging.search import Project as ProjectDocument
 from warehouse.search.utils import get_index
 
 
-def _project_docs(db, project_name: str | None = None):
+def _project_docs(db, project_normalized_name: str | None = None):
     classifiers_subquery = (
         select(func.array_agg(Classifier.classifier))
         .select_from(ReleaseClassifiers)
@@ -62,8 +62,12 @@ def _project_docs(db, project_name: str | None = None):
         .filter(
             Release.yanked.is_(False),
             Release.files.any(),
-            # Filter by project_name if provided
-            Project.name == project_name if project_name else text("TRUE"),
+            # Filter by project_normalized_name if provided
+            (
+                Project.normalized_name == project_normalized_name
+                if project_normalized_name
+                else text("TRUE")
+            ),
             # Don't index archived/quarantined projects
             or_(
                 Project.lifecycle_status.notin_(
@@ -210,7 +214,7 @@ def reindex(self, request):
 
 
 @tasks.task(bind=True, ignore_result=True, acks_late=True)
-def reindex_project(self, request, project_name):
+def reindex_project(self, request, project_normalized_name):
     r = redis.StrictRedis.from_url(request.registry.settings["celery.scheduler_url"])
     try:
         with SearchLock(r, timeout=15, blocking_timeout=1):
@@ -226,7 +230,9 @@ def reindex_project(self, request, project_name):
             )
 
             for _ in parallel_bulk(
-                client, _project_docs(request.db, project_name), index=index_name
+                client,
+                _project_docs(request.db, project_normalized_name),
+                index=index_name,
             ):
                 pass
     except redis.exceptions.LockError as exc:
@@ -235,14 +241,14 @@ def reindex_project(self, request, project_name):
 
 
 @tasks.task(bind=True, ignore_result=True, acks_late=True)
-def unindex_project(self, request, project_name):
+def unindex_project(self, request, project_normalized_name):
     r = redis.StrictRedis.from_url(request.registry.settings["celery.scheduler_url"])
     try:
         with SearchLock(r, timeout=15, blocking_timeout=1):
             client = request.registry["opensearch.client"]
             index_name = request.registry["opensearch.index"]
             try:
-                client.delete(index=index_name, id=project_name)
+                client.delete(index=index_name, id=project_normalized_name)
             except opensearchpy.exceptions.NotFoundError:
                 pass
     except redis.exceptions.LockError as exc:
