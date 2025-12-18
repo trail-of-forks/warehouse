@@ -30,6 +30,7 @@ import warehouse.constants
 from warehouse.accounts.utils import UserContext
 from warehouse.admin.flags import AdminFlag, AdminFlagValue
 from warehouse.attestations.interfaces import IIntegrityService
+from warehouse.btlog.interfaces import IBinaryTransparencyLogService
 from warehouse.classifiers.models import Classifier
 from warehouse.forklift import legacy, metadata
 from warehouse.macaroons import IMacaroonService, caveats, security_policy
@@ -1216,10 +1217,12 @@ class TestFileUpload:
             with open(file_path, "rb") as fp:
                 assert fp.read() == expected
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=storage_service_store)
         db_request.find_service = pretend.call_recorder(
             lambda svc, name=None, context=None: {
                 IFileStorage: storage_service,
+                IBinaryTransparencyLogService: btlog_service,
             }.get(svc)
         )
         db_request.registry.settings = {
@@ -1233,6 +1236,7 @@ class TestFileUpload:
         assert resp.status_code == 200
         assert db_request.find_service.calls == [
             pretend.call(IIntegrityService, context=None),
+            pretend.call(IBinaryTransparencyLogService),
             pretend.call(IFileStorage, name="archive"),
         ]
         assert len(storage_service.store.calls) == 1
@@ -1746,9 +1750,11 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
             IProjectService: project_service,
         }.get(svc)
         db_request.user_agent = "warehouse-tests/6.6.6"
@@ -1964,9 +1970,11 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
             IProjectService: project_service,
         }.get(svc)
         db_request.user_agent = "warehouse-tests/6.6.6"
@@ -2073,10 +2081,12 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, file_path, *, meta: None)
         db_request.find_service = pretend.call_recorder(
             lambda svc, name=None, context=None: {
                 IFileStorage: storage_service,
+                IBinaryTransparencyLogService: btlog_service,
             }.get(svc)
         )
 
@@ -2354,9 +2364,11 @@ class TestFileUpload:
         release = ReleaseFactory.create(project=project, version="1.0")
         RoleFactory.create(user=user, project=project)
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
         monkeypatch.setattr(
             legacy, "_is_valid_dist_file", lambda *a, **kw: (True, None)
@@ -2421,9 +2433,11 @@ class TestFileUpload:
         project = ProjectFactory.create(name="wutang")
         RoleFactory.create(user=user, project=project)
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
         monkeypatch.setattr(
             legacy, "_is_valid_dist_file", lambda *a, **kw: (True, None)
@@ -2780,6 +2794,7 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         extract_http_macaroon = pretend.call_recorder(lambda r, _: raw_macaroon)
         monkeypatch.setattr(
@@ -2788,6 +2803,7 @@ class TestFileUpload:
 
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
             IMacaroonService: macaroon_service,
             IProjectService: project_service,
             IIntegrityService: integrity_service,
@@ -2908,11 +2924,13 @@ class TestFileUpload:
                 else:
                     assert fp.read() == filebody
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=storage_service_store)
 
         db_request.find_service = pretend.call_recorder(
             lambda svc, name=None, context=None: {
                 IFileStorage: storage_service,
+                IBinaryTransparencyLogService: btlog_service,
             }.get(svc)
         )
 
@@ -2925,6 +2943,7 @@ class TestFileUpload:
         assert resp.status_code == 200
         assert db_request.find_service.calls == [
             pretend.call(IIntegrityService, context=None),
+            pretend.call(IBinaryTransparencyLogService),
             pretend.call(IFileStorage, name="archive"),
         ]
         assert storage_service.store.calls == [
@@ -3029,11 +3048,13 @@ class TestFileUpload:
                 else:
                     assert fp.read() == filebody
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=storage_service_store)
 
         db_request.find_service = pretend.call_recorder(
             lambda svc, name=None, context=None: {
                 IFileStorage: storage_service,
+                IBinaryTransparencyLogService: btlog_service,
             }.get(svc)
         )
 
@@ -3095,11 +3116,13 @@ class TestFileUpload:
                 else:
                     assert fp.read() == filebody
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=storage_service_store)
 
         db_request.find_service = pretend.call_recorder(
             lambda svc, name=None, context=None: {
                 IFileStorage: storage_service,
+                IBinaryTransparencyLogService: btlog_service,
             }.get(svc)
         )
 
@@ -3165,11 +3188,13 @@ class TestFileUpload:
             with open(file_path, "rb") as fp:
                 assert fp.read() == filebody
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=storage_service_store)
 
         db_request.find_service = pretend.call_recorder(
             lambda svc, name=None, context=None: {
                 IFileStorage: storage_service,
+                IBinaryTransparencyLogService: btlog_service,
             }.get(svc)
         )
 
@@ -3258,10 +3283,12 @@ class TestFileUpload:
                 else:
                     assert fp.read() == filebody
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=storage_service_store)
         db_request.find_service = pretend.call_recorder(
             lambda svc, name=None, context=None: {
                 IFileStorage: storage_service,
+                IBinaryTransparencyLogService: btlog_service,
             }.get(svc)
         )
 
@@ -3274,6 +3301,7 @@ class TestFileUpload:
         assert resp.status_code == 200
         assert db_request.find_service.calls == [
             pretend.call(IIntegrityService, context=None),
+            pretend.call(IBinaryTransparencyLogService),
             pretend.call(IFileStorage, name="archive"),
         ]
         assert storage_service.store.calls == [
@@ -3557,9 +3585,11 @@ class TestFileUpload:
             legacy, "_is_valid_dist_file", lambda *a, **kw: (True, None)
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         send_email = pretend.call_recorder(lambda *a, **kw: None)
@@ -3637,9 +3667,11 @@ class TestFileUpload:
             legacy, "_is_valid_dist_file", lambda *a, **kw: (True, None)
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         send_email = pretend.call_recorder(lambda *a, **kw: None)
@@ -3707,9 +3739,11 @@ class TestFileUpload:
             legacy, "_is_valid_dist_file", lambda *a, **kw: (True, None)
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         send_email = pretend.call_recorder(lambda *a, **kw: None)
@@ -3785,9 +3819,11 @@ class TestFileUpload:
             legacy, "_is_valid_dist_file", lambda *a, **kw: (True, None)
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         send_email = pretend.call_recorder(lambda *a, **kw: None)
@@ -3852,9 +3888,11 @@ class TestFileUpload:
             legacy, "_is_valid_dist_file", lambda *a, **kw: (True, None)
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         send_email = pretend.call_recorder(lambda *a, **kw: None)
@@ -3961,9 +3999,11 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
         db_request.user_agent = "warehouse-tests/6.6.6"
 
@@ -4062,9 +4102,11 @@ class TestFileUpload:
             ]
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         record_event = pretend.call_recorder(
@@ -4228,10 +4270,12 @@ class TestFileUpload:
                 ),
             }
         )
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IIntegrityService: integrity_service,
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         record_event = pretend.call_recorder(
@@ -4395,9 +4439,11 @@ class TestFileUpload:
             ]
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         legacy.file_upload(db_request)
@@ -4466,9 +4512,11 @@ class TestFileUpload:
             ]
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         legacy.file_upload(db_request)
@@ -4561,9 +4609,11 @@ class TestFileUpload:
         db_request.POST.add("project_urls", f"verified_url, {verified_url}")
         db_request.POST.add("project_urls", f"unverified_url, {unverified_url}")
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         legacy.file_upload(db_request)
@@ -4642,9 +4692,11 @@ class TestFileUpload:
             ]
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         legacy.file_upload(db_request)
@@ -4709,9 +4761,11 @@ class TestFileUpload:
             ]
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         resp = legacy.file_upload(db_request)
@@ -4815,9 +4869,11 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         resp = legacy.file_upload(db_request)
@@ -4864,9 +4920,11 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         legacy.file_upload(db_request)
@@ -4898,9 +4956,11 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
         db_request.user_agent = "warehouse-tests/6.6.6"
 
@@ -4962,9 +5022,11 @@ class TestFileUpload:
             test=lambda *a, **kw: False,
             resets_in=lambda *a, **kw: 60,
         )
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
             IProjectService: project_service,
         }.get(svc)
         db_request.user_agent = "warehouse-tests/6.6.6"
@@ -5002,9 +5064,11 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
             IProjectService: project_service,
         }.get(svc)
         db_request.user_agent = "warehouse-tests/6.6.6"
@@ -5081,9 +5145,11 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
             IProjectService: project_service,
         }.get(svc)
         db_request.user_agent = "warehouse-tests/6.6.6"
@@ -5114,9 +5180,11 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
             IProjectService: project_service,
         }.get(svc)
         db_request.user_agent = "warehouse-tests/6.6.6"
@@ -5182,9 +5250,11 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
             IProjectService: project_service,
         }.get(svc)
         db_request.user_agent = "warehouse-tests/6.6.6"
@@ -5240,9 +5310,11 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
             IProjectService: project_service,
         }.get(svc)
         db_request.user_agent = "warehouse-tests/6.6.6"
@@ -5378,6 +5450,7 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         extract_http_macaroon = pretend.call_recorder(lambda r, _: raw_macaroon)
         monkeypatch.setattr(
@@ -5386,6 +5459,7 @@ class TestFileUpload:
 
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
             IMacaroonService: macaroon_service,
             IProjectService: project_service,
         }.get(svc)
@@ -5478,10 +5552,12 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
 
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
             IMacaroonService: macaroon_service,
             IMetricsService: metrics,
             IProjectService: project_service,
@@ -5547,10 +5623,12 @@ class TestFileUpload:
             }
         )
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
 
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
             IMacaroonService: macaroon_service,
             IProjectService: project_service,
         }.get(svc)
@@ -5641,9 +5719,11 @@ class TestFileUpload:
         if filetype == "bdist_wheel":
             db_request.POST.extend([("pyversion", "py3")])
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         resp = legacy.file_upload(db_request)
@@ -5751,9 +5831,11 @@ class TestFileUpload:
         if filetype == "bdist_wheel":
             db_request.POST.extend([("pyversion", "py3")])
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         with pytest.raises(HTTPBadRequest) as excinfo:
@@ -5807,9 +5889,11 @@ class TestFileUpload:
         )
         db_request.POST.extend([("pyversion", "py3")])
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=lambda path, filepath, meta: None)
         db_request.find_service = lambda svc, name=None, context=None: {
             IFileStorage: storage_service,
+            IBinaryTransparencyLogService: btlog_service,
         }.get(svc)
 
         with pytest.raises(HTTPBadRequest) as excinfo:
@@ -5849,11 +5933,13 @@ class TestFileUpload:
                 else:
                     assert fp.read() == filebody
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=storage_service_store)
 
         db_request.find_service = pretend.call_recorder(
             lambda svc, name=None, context=None: {
                 IFileStorage: storage_service,
+                IBinaryTransparencyLogService: btlog_service,
             }.get(svc)
         )
 
@@ -5967,11 +6053,13 @@ class TestFileUpload:
                 else:
                     assert fp.read() == filebody
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=storage_service_store)
 
         db_request.find_service = pretend.call_recorder(
             lambda svc, name=None, context=None: {
                 IFileStorage: storage_service,
+                IBinaryTransparencyLogService: btlog_service,
             }.get(svc)
         )
 
@@ -6041,11 +6129,13 @@ class TestFileUpload:
                 else:
                     assert fp.read() == filebody
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=storage_service_store)
 
         db_request.find_service = pretend.call_recorder(
             lambda svc, name=None, context=None: {
                 IFileStorage: storage_service,
+                IBinaryTransparencyLogService: btlog_service,
             }.get(svc)
         )
 
@@ -6106,11 +6196,13 @@ class TestFileUpload:
                 else:
                     assert fp.read() == filebody
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=storage_service_store)
 
         db_request.find_service = pretend.call_recorder(
             lambda svc, name=None, context=None: {
                 IFileStorage: storage_service,
+                IBinaryTransparencyLogService: btlog_service,
             }.get(svc)
         )
 
@@ -6169,12 +6261,14 @@ class TestFileUpload:
         )
 
         # Mock storage service
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(
             store=pretend.call_recorder(lambda *a, **kw: None)
         )
         db_request.find_service = pretend.call_recorder(
             lambda svc, name=None, context=None: {
                 IFileStorage: storage_service,
+                IBinaryTransparencyLogService: btlog_service,
             }.get(svc)
         )
 
@@ -6246,10 +6340,12 @@ class TestFileUpload:
                 else:
                     assert fp.read() == filebody
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=storage_service_store)
         db_request.find_service = pretend.call_recorder(
             lambda svc, name=None, context=None: {
                 IFileStorage: storage_service,
+                IBinaryTransparencyLogService: btlog_service,
             }.get(svc)
         )
 
@@ -6317,10 +6413,12 @@ class TestFileUpload:
                 else:
                     assert fp.read() == filebody
 
+        btlog_service = pretend.stub(submit_entry=lambda **kw: {"entry_id": "123"})
         storage_service = pretend.stub(store=storage_service_store)
         db_request.find_service = pretend.call_recorder(
             lambda svc, name=None, context=None: {
                 IFileStorage: storage_service,
+                IBinaryTransparencyLogService: btlog_service,
             }.get(svc)
         )
 
