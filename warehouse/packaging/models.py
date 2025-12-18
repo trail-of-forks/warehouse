@@ -55,6 +55,7 @@ from urllib3.util import parse_url
 from warehouse import db
 from warehouse.accounts.models import User
 from warehouse.attestations.models import Provenance
+from warehouse.btlog.models import TransparencyLogEntry
 from warehouse.authnz import Permissions
 from warehouse.classifiers.models import Classifier
 from warehouse.constants import MAX_FILESIZE, MAX_PROJECT_SIZE
@@ -1001,6 +1002,13 @@ class File(HasEvents, db.Model):
 
     # PEP 740
     provenance: Mapped[Provenance] = orm.relationship(
+        cascade="all, delete-orphan",
+        lazy="joined",
+        passive_deletes=True,
+    )
+
+    # Binary transparency log entry
+    transparency_log: Mapped[TransparencyLogEntry] = orm.relationship(
         cascade="all, delete-orphan",
         lazy="joined",
         passive_deletes=True,
