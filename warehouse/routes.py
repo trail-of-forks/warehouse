@@ -628,6 +628,15 @@ def includeme(config):
         domain=warehouse,
     )
 
+    # Binary Transparency Log URLs
+    config.add_route(
+        "transparency.info",
+        "/transparency/{project_name}/{release}/{filename}/info",
+        factory="warehouse.packaging.models:ProjectFactory",
+        traverse="/{project_name}/{release}/{filename}",
+        domain=warehouse,
+    )
+
     # Mock URLs
     config.add_route(
         "mock.billing.checkout-session",
