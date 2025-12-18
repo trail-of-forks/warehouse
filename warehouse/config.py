@@ -852,6 +852,9 @@ def configure(settings=None):
     # Register support for attestations
     config.include(".attestations")
 
+    # Register support for binary transparency log
+    config.include(".btlog")
+
     # Register logged-in views
     config.include(".manage")
 
