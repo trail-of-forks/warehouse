@@ -1591,22 +1591,23 @@ def file_upload(request):
             # Log successful attestation upload
             request.metrics.increment("warehouse.upload.attestations.ok")
 
-        # Submit to binary transparency log
+        # Submit to binary transparency log (if configured)
         btlog_service = request.find_service(IBinaryTransparencyLogService)
-        try:
-            log_response = btlog_service.submit_entry(
-                checksum=file_hashes["sha256"],
-                filename=filename,
-            )
-        except BinaryTransparencyLogError as e:
-            request.metrics.increment(
-                "warehouse.upload.failed", tags=["reason:btlog-failed"]
-            )
-            raise _exc_with_message(HTTPBadRequest, str(e)) from e
+        if btlog_service is not None:
+            try:
+                log_response = btlog_service.submit_entry(
+                    checksum=file_hashes["sha256"],
+                    filename=filename,
+                )
+            except BinaryTransparencyLogError as e:
+                request.metrics.increment(
+                    "warehouse.upload.failed", tags=["reason:btlog-failed"]
+                )
+                raise _exc_with_message(HTTPBadRequest, str(e)) from e
 
-        # Store the transparency log entry
-        request.db.add(TransparencyLogEntry(file=file_, log_entry=log_response))
-        request.metrics.increment("warehouse.upload.btlog.ok")
+            # Store the transparency log entry
+            request.db.add(TransparencyLogEntry(file=file_, log_entry=log_response))
+            request.metrics.increment("warehouse.upload.btlog.ok")
 
         # TODO: We need a better answer about how to make this transactional so
         #       this won't take affect until after a commit has happened, for
