@@ -95,7 +95,7 @@ HELPDESK_NOTIFICATION_BACKEND="warehouse.helpdesk.services.ConsoleAdminNotificat
 
 # Binary Transparency Log configuration
 # Uncomment to enable btlog - uploads will be logged to this endpoint
-# BTLOG_ENDPOINT="http://localhost:8181"
+BTLOG_ENDPOINT="http://pypi-bt-log.tailnet-a696.ts.net:8080/"
 
 # Example of Domain Status configuration
 # DOMAIN_STATUS_BACKEND="warehouse.accounts.services.DomainrDomainStatusService client_id=some_client_id"

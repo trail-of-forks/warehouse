@@ -1592,7 +1592,10 @@ def file_upload(request):
             request.metrics.increment("warehouse.upload.attestations.ok")
 
         # Submit to binary transparency log (if configured)
-        btlog_service = request.find_service(IBinaryTransparencyLogService)
+        try:
+            btlog_service = request.find_service(IBinaryTransparencyLogService)
+        except LookupError:
+            btlog_service = None
         if btlog_service is not None:
             try:
                 log_response = btlog_service.submit_entry(

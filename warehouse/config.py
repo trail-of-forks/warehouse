@@ -507,6 +507,9 @@ def configure(settings=None):
         "HELPDESK_NOTIFICATION_SERVICE_URL",
     )
 
+    # Binary transparency log settings
+    maybe_set(settings, "btlog.endpoint", "BTLOG_ENDPOINT")
+
     # Configure our ratelimiters
     maybe_set(
         settings,
