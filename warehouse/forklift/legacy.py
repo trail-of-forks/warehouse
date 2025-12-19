@@ -1597,6 +1597,12 @@ def file_upload(request):
         except LookupError:
             btlog_service = None
         if btlog_service is not None:
+            # Build the entry to be logged
+            btlog_entry = {
+                "checksum": f"sha256:{file_hashes['sha256']}",
+                "filename": filename,
+            }
+
             try:
                 log_response = btlog_service.submit_entry(
                     checksum=file_hashes["sha256"],
@@ -1608,8 +1614,20 @@ def file_upload(request):
                 )
                 raise _exc_with_message(HTTPBadRequest, str(e)) from e
 
-            # Store the transparency log entry
-            request.db.add(TransparencyLogEntry(file=file_, log_entry=log_response))
+            # Build the full transparency log structure to store
+            transparency_log_data = {
+                "version": 1,
+                "log_origin": request.registry.settings.get(
+                    "btlog.origin", "bt-log.pypi.org"
+                ),
+                "entry_index": log_response.get("index"),
+                "entry": btlog_entry,
+                "checkpoint": log_response.get("checkpoint"),
+                "inclusion_proof": log_response.get("inclusionProof"),
+            }
+            request.db.add(
+                TransparencyLogEntry(file=file_, log_entry=transparency_log_data)
+            )
             request.metrics.increment("warehouse.upload.btlog.ok")
 
         # TODO: We need a better answer about how to make this transactional so

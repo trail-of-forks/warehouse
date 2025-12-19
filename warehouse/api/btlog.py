@@ -36,7 +36,5 @@ def transparency_info(file: File, request: Request):
             json={"message": f"No transparency log entry for {file.filename}"}
         )
 
-    # Apply CORS headers.
     request.response.headers.update(_CORS_HEADERS)
-
     return file.transparency_log.log_entry

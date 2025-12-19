@@ -16,20 +16,30 @@ class TestBinaryTransparencyLogService:
     def test_interface_matches(self):
         assert verifyClass(IBinaryTransparencyLogService, BinaryTransparencyLogService)
 
-    def test_create_service(self, db_request):
-        db_request.registry.settings = {"btlog.endpoint": "http://localhost:8181"}
-        db_request.http = pretend.stub()
+    def test_create_service(self):
+        http = pretend.stub()
+        request = pretend.stub(
+            registry=pretend.stub(
+                settings={"btlog.endpoint": "http://localhost:8181"},
+            ),
+            http=http,
+        )
 
-        service = BinaryTransparencyLogService.create_service(None, db_request)
+        service = BinaryTransparencyLogService.create_service(None, request)
 
         assert service.endpoint == "http://localhost:8181"
-        assert service.http is db_request.http
+        assert service.http is http
 
-    def test_create_service_default_endpoint(self, db_request):
-        db_request.registry.settings = {}
-        db_request.http = pretend.stub()
+    def test_create_service_default_endpoint(self):
+        http = pretend.stub()
+        request = pretend.stub(
+            registry=pretend.stub(
+                settings={},
+            ),
+            http=http,
+        )
 
-        service = BinaryTransparencyLogService.create_service(None, db_request)
+        service = BinaryTransparencyLogService.create_service(None, request)
 
         assert service.endpoint == "http://localhost:8181"
 
