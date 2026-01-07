@@ -1200,7 +1200,6 @@ def file_upload(request):
 
         # Check that the sdist filename is correct
         if form.filetype.data == "sdist":
-
             # Extract the project name and version from the filename and check it.
             try:
                 name_from_filename, version_from_filename = (
@@ -1605,7 +1604,7 @@ def file_upload(request):
 
             try:
                 log_response = btlog_service.submit_entry(
-                    checksum=file_hashes["sha256"],
+                    checksum="sha256:" + file_hashes["sha256"],
                     filename=filename,
                 )
             except BinaryTransparencyLogError as e:
