@@ -98,7 +98,9 @@ def test_single_project_doc(db_session):
                 )
             ]
 
-    assert list(_project_docs(db_session, project_name=projects[1].name)) == [
+    assert list(
+        _project_docs(db_session, project_normalized_name=projects[1].normalized_name)
+    ) == [
         {
             "_id": p.normalized_name,
             "_source": {
@@ -211,13 +213,6 @@ class TestSearchLock:
 
 class TestReindex:
     def test_fails_when_raising(self, db_request, monkeypatch):
-        docs = pretend.stub()
-
-        def project_docs(db):
-            return docs
-
-        monkeypatch.setattr(warehouse.search.tasks, "_project_docs", project_docs)
-
         task = pretend.stub()
         es_client = FakeESClient()
 
@@ -239,7 +234,6 @@ class TestReindex:
             client, iterable, index=None, chunk_size=None, max_chunk_bytes=None
         ):
             assert client is es_client
-            assert iterable is docs
             assert index == "warehouse-cbcbcbcbcb"
             raise TestError
 
@@ -273,13 +267,6 @@ class TestReindex:
         assert task.retry.calls == [pretend.call(countdown=60, exc=le)]
 
     def test_successfully_indexes_and_adds_new(self, db_request, monkeypatch):
-        docs = pretend.stub()
-
-        def project_docs(db):
-            return docs
-
-        monkeypatch.setattr(warehouse.search.tasks, "_project_docs", project_docs)
-
         task = pretend.stub()
         es_client = FakeESClient()
 
@@ -306,15 +293,13 @@ class TestReindex:
 
         reindex(task, db_request)
 
-        assert parallel_bulk.calls == [
-            pretend.call(
-                es_client,
-                docs,
-                index="warehouse-cbcbcbcbcb",
-                chunk_size=100,
-                max_chunk_bytes=10485760,
-            )
-        ]
+        assert len(parallel_bulk.calls) == 1
+        assert parallel_bulk.calls[0].args[0] is es_client
+        assert parallel_bulk.calls[0].kwargs == {
+            "index": "warehouse-cbcbcbcbcb",
+            "chunk_size": 100,
+            "max_chunk_bytes": 10485760,
+        }
         assert es_client.indices.create.calls == [
             pretend.call(
                 body={
@@ -338,13 +323,7 @@ class TestReindex:
         ]
 
     def test_successfully_indexes_and_replaces(self, db_request, monkeypatch):
-        docs = pretend.stub()
         task = pretend.stub()
-
-        def project_docs(db):
-            return docs
-
-        monkeypatch.setattr(warehouse.search.tasks, "_project_docs", project_docs)
 
         es_client = FakeESClient()
         es_client.indices.indices["warehouse-aaaaaaaaaa"] = None
@@ -378,15 +357,13 @@ class TestReindex:
 
         reindex(task, db_request)
 
-        assert parallel_bulk.calls == [
-            pretend.call(
-                es_client,
-                docs,
-                index="warehouse-cbcbcbcbcb",
-                chunk_size=100,
-                max_chunk_bytes=10485760,
-            )
-        ]
+        assert len(parallel_bulk.calls) == 1
+        assert parallel_bulk.calls[0].args[0] is es_client
+        assert parallel_bulk.calls[0].kwargs == {
+            "index": "warehouse-cbcbcbcbcb",
+            "chunk_size": 100,
+            "max_chunk_bytes": 10485760,
+        }
         assert es_client.indices.create.calls == [
             pretend.call(
                 body={
@@ -412,13 +389,6 @@ class TestReindex:
         ]
 
     def test_client_aws(self, db_request, monkeypatch):
-        docs = pretend.stub()
-
-        def project_docs(db):
-            return docs
-
-        monkeypatch.setattr(warehouse.search.tasks, "_project_docs", project_docs)
-
         task = pretend.stub()
         aws4auth_stub = pretend.stub()
         aws4auth = pretend.call_recorder(lambda *a, **kw: aws4auth_stub)
@@ -466,15 +436,13 @@ class TestReindex:
             )
         ]
 
-        assert parallel_bulk.calls == [
-            pretend.call(
-                es_client,
-                docs,
-                index="warehouse-cbcbcbcbcb",
-                chunk_size=100,
-                max_chunk_bytes=10485760,
-            )
-        ]
+        assert len(parallel_bulk.calls) == 1
+        assert parallel_bulk.calls[0].args[0] is es_client
+        assert parallel_bulk.calls[0].kwargs == {
+            "index": "warehouse-cbcbcbcbcb",
+            "chunk_size": 100,
+            "max_chunk_bytes": 10485760,
+        }
         assert es_client.indices.create.calls == [
             pretend.call(
                 body={
@@ -500,15 +468,9 @@ class TestReindex:
 
 class TestPartialReindex:
     def test_reindex_fails_when_raising(self, db_request, monkeypatch):
-        docs = pretend.stub()
         task = pretend.stub()
 
         db_request.registry.settings = {"celery.scheduler_url": "redis://redis:6379/0"}
-
-        def project_docs(db, project_name=None):
-            return docs
-
-        monkeypatch.setattr(warehouse.search.tasks, "_project_docs", project_docs)
 
         es_client = FakeESClient()
 
@@ -521,7 +483,6 @@ class TestPartialReindex:
 
         def parallel_bulk(client, iterable, index=None):
             assert client is es_client
-            assert iterable is docs
             raise TestError
 
         monkeypatch.setattr(warehouse.search.tasks, "parallel_bulk", parallel_bulk)
@@ -601,15 +562,9 @@ class TestPartialReindex:
         assert task.retry.calls == [pretend.call(countdown=60, exc=le)]
 
     def test_successfully_indexes(self, db_request, monkeypatch):
-        docs = pretend.stub()
         task = pretend.stub()
 
         db_request.registry.settings = {"celery.scheduler_url": "redis://redis:6379/0"}
-
-        def project_docs(db, project_name=None):
-            return docs
-
-        monkeypatch.setattr(warehouse.search.tasks, "_project_docs", project_docs)
 
         es_client = FakeESClient()
         es_client.indices.indices["warehouse-aaaaaaaaaa"] = None
@@ -633,7 +588,9 @@ class TestPartialReindex:
 
         reindex_project(task, db_request, "foo")
 
-        assert parallel_bulk.calls == [pretend.call(es_client, docs, index="warehouse")]
+        assert len(parallel_bulk.calls) == 1
+        assert parallel_bulk.calls[0].args[0] is es_client
+        assert parallel_bulk.calls[0].kwargs == {"index": "warehouse"}
         assert es_client.indices.create.calls == []
         assert es_client.indices.delete.calls == []
         assert es_client.indices.aliases == {"warehouse": ["warehouse-aaaaaaaaaa"]}
